@@ -1,6 +1,7 @@
 !(bind! &attentionalFocus (new-space))
+(= (AttentionalFocus) &attentionalFocus)
 
-(= (maxAFSize) 100)
+(= (maxAFSize) 3)
 
 ;Function: atomIsInAF
 ;Description: Checks if a given atom is in the attentional focus space.
@@ -242,31 +243,32 @@
 ;Description: Retrieves a random atom that is not in attentional focus.
 ;Parameters: None.
 ;Returns: A randomly selected atom from outside attentional focus.
-(: getRandomAtomNotInAF (-> Atom))
+(: getRandomAtomNotInAF (-> Symbol))
 (= (getRandomAtomNotInAF)
    (let*
        (
-
-           ($allAtoms  (getAtomBinList))
-           ($filteredAtoms (filter $allAtoms atomIsNotInAF))
+        ($atomsInBins (getAtomsInBins))
+        ($filteredAtoms (filter $atomsInBins atomIsNotInAF))
        )
        (if (== $filteredAtoms ())
-           %Undefined 
-           (let*
+           %Undefined%
+        (let*
                (
 
-                   ($res (py-list $filteredAtoms))
-                   ($randomAtom ((py-atom random.choice) $res))
+                   ($randInt (random-int 0 (size-atom $filteredAtoms)))
+                   ($randomAtom (index-atom $filteredAtoms $randInt))
                )
-               $randomAtom 
+             $randomAtom
+
            )
        )
    )
 )
 
+
 ;;; Function: getIncomingSet
 ;;; Description: Retrieves the set of incoming links of a specific type for a given atom,
-;;;              filtering out links not in the active frame (AF).
+;;;              filtering out links not in the attentional focus (AF).
 ;;; Parameters:
 ;;;   $atom: The atom for which to find incoming links.
 ;;;   $type: The type of link to consider.
@@ -284,7 +286,7 @@
 ;!!!the filtered set needs sorting by STI value
 
 ;;; Function: filterLinksInAF
-;;; Description: Filters a list of links, returning only those that are in the active frame (AF).
+;;; Description: Filters a list of links, returning only those that are in the attentional focus (AF).
 ;;; Parameters:
 ;;;   $incoming_set: A list of incoming links to filter.
 ;;; Returns: A new list containing only the links that are in the AF.
@@ -310,7 +312,7 @@
 
 ;;; Function: getIncomingSetByType
 ;;; Description: Retrieves the set of incoming links of a specific type for a given atom
-;;;              without filtering based on the active frame.
+;;;              without filtering based on the attentional focus.
 ;;; Parameters:
 ;;;   $atom: The atom for which to find incoming links.
 ;;;   $type: The type of link to consider.
@@ -327,6 +329,7 @@
         )  
     )
 )
+
 
 ;This function simply matches if two nodes are equal and they are in AF
 (:nodeMatch (-> Atom Atom Bool))
@@ -435,4 +438,43 @@
 )
 
 
+;;; Function: getIncomingSetwithoutType
+;;; Description: Retrieves the set of incoming links for a given atom,
+;;;              without filtering out links not in the attentional focus (AF).
+;;; Parameters:
+;;;   $atom: The atom for which to find incoming links.
+;;; Returns: A list of incoming links.
+
+(: getIncomingSetwithoutType (-> Atom List))
+
+(= (getIncomingSetwithoutType $atom)
+    (collapse
+        (superpose
+            (
+                (match &attentionalFocus ($type $atom $b) ($type $atom $b))
+                (match &attentionalFocus  ($type $b $atom) ($type $b $atom))
+            )
+        )  
+    )
+)
+
+
+
+( = (getRandomAtomInAF)
+    (if  (== (attentionalFocusSize) 0)
+        ("AF is Empty")
+        ;else
+        ( let*( ($randomNumber (random-int 0 (attentionalFocusSize) ))
+            ($atoms (getAtomList))
+            ($randomAtom (index-atom $atoms $randomNumber))
+            )
+        $randomAtom
+        )
+    )
+)
+
+
+(= (attentionalFocus)
+    &attentionalFocus
+)
 
